@@ -9,10 +9,15 @@ public class Controlador : MonoBehaviour {
     public float rotationSpeed = 500;
     public float walkSpeed;
     public float runSpeed;
+    public Arma arma;
 
+
+    private Camera cam;
     private Quaternion targetRotation;
 
+
     private CharacterController controller;
+
     
     
 	// Use this for initialization
@@ -20,44 +25,65 @@ public class Controlador : MonoBehaviour {
         controller = GetComponent<CharacterController>();
 
         rotationSpeed = 500;
-        walkSpeed = 10;
-        runSpeed = 20;
+        walkSpeed = 5;
+        cam = Camera.main;
 
     }
 	
 	// Update is called once per frame
 	void Update () {
-        Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
 
-        if (input != Vector3.zero)
+        apuntado();
+        movimiento();
+
+        if (Input.GetButtonDown("Shoot"))
         {
-            targetRotation = Quaternion.LookRotation(input);
-            transform.eulerAngles = Vector3.up * Mathf.MoveTowardsAngle(transform.eulerAngles.y,
-                targetRotation.eulerAngles.y, rotationSpeed * Time.deltaTime);
+            arma.disparar();
+        }
+		
+	}
 
+    void apuntado()
+    {
+        /*Sale un rayo de la camara hasta el suelo, el personaje apunta hasta ese pto: */
+        Ray camRay = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+        Plane plane = new Plane(Vector3.up, Vector3.zero);
+
+        float distance;
+        if (plane.Raycast(camRay, out distance))
+        {
+            Vector3 target = camRay.GetPoint(distance);
+            Vector3 direction = target - transform.position;
+            float rotation = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0, rotation, 0);
         }
 
+    }
+    void movimiento()
+    {
+        Vector3 input = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
         Vector3 motion = input;
 
         /*input *= (Mathf.Abs(input.x) == 1 && Mathf.Abs(input.z) == 1) * 0.7f: 1;*/
-        if (Mathf.Abs(input.x) == 1 && Mathf.Abs(input.z) == 1){
+        if (Mathf.Abs(input.x) == 1 && Mathf.Abs(input.z) == 1)
+        {
             motion *= 0.7f;
         }
-        else{
+        else
+        {
             motion *= 1;
         }
-
-        if (Input.GetButton("Run")){
+        motion *= walkSpeed;
+        /*if (Input.GetButton("Run"))
+        {
             motion *= runSpeed;
         }
-        else{
+        else
+        {
             motion *= walkSpeed;
-        }
-
-
+        }*/
         motion += Vector3.up * -8;
-
-        controller.Move(motion * Time.deltaTime );
-		
-	}
+        controller.Move(motion * Time.deltaTime);
+    }
 }
